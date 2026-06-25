@@ -9,7 +9,10 @@ import {
   SkipForward,
   Volume2,
 } from 'lucide-react'
+import { useSelector } from 'react-redux'
+// import { store } from '../../../../app/store/store'
 
+// 
 const iconButtonClass =
   'grid h-8 w-8 place-items-center rounded-full text-[#b3b3b3] transition hover:text-white focus:outline-none focus:ring-2 focus:ring-white'
 
@@ -34,9 +37,33 @@ const ProgressBar = ({ className = '' }) => {
 }
 
 const Player = () => {
+  const currentSong = useSelector((state)=> state.player.currentSong)
+  const isPlaying = useSelector((state) => state.player.isPlaying)
   return (
     <footer className="grid h-20 grid-cols-[1fr_auto_1fr] items-center border-t border-[#1f1f1f] bg-black px-4 text-white">
-      <div className="hidden min-w-0 md:block" />
+      <div className="hidden min-w-0 items-center gap-3 md:flex">
+  {currentSong ? (
+    <>
+      <img
+        src={currentSong.thumbnail}
+        alt={currentSong.title}
+        className="h-12 w-12 rounded object-cover"
+      />
+
+      <div className="min-w-0">
+        <p className="truncate text-sm font-bold">
+          {currentSong.title}
+        </p>
+
+        <p className="truncate text-xs text-[#b3b3b3]">
+          {currentSong.artist}
+        </p>
+      </div>
+    </>
+  ) : (
+    <p className="text-sm text-[#b3b3b3]">No song selected</p>
+  )}
+</div>
 
       <div className="col-span-3 flex min-w-0 flex-col items-center gap-3 md:col-span-1">
         <div className="flex items-center gap-3 sm:gap-5">
