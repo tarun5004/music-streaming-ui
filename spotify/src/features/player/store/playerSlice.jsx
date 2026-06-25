@@ -13,14 +13,14 @@ const playerSlice = createSlice({
             state.currentSong = action.payload
             state.isPlaying = true
         },
-        playSong: (state) => {
+        play: (state) => {
             state.isPlaying = true
         },
-        pauseSong: (state) => {
+        pause: (state) => {
             state.isPlaying = false
         },
     },
 })
 
-export const { setCurrentSong, playSong, pauseSong } = playerSlice.actions
+export const { setCurrentSong, play, pause } = playerSlice.actions
 export default playerSlice.reducer

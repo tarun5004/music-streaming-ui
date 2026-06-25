@@ -11,8 +11,9 @@ import {
   Volume2,
 } from 'lucide-react'
 import { useSelector } from 'react-redux'
-import {useRef, useState } from 'react'
+import {useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router'
+import { usePlayer } from '../../hooks/usePlayer'
 
 
 // 
@@ -43,6 +44,8 @@ const ProgressBar = ({ value = 0, className = '' }) => {
 }
 
 const Player = () => {
+  let { togglePlayAndPause } = usePlayer() // Get the togglePlayAndPause function from the usePlayer hook
+
   const currentSong = useSelector((state)=> state.player.currentSong)
   const isPlaying = useSelector((state) => state.player.isPlaying)
   const navigate = useNavigate()
@@ -57,6 +60,24 @@ const Player = () => {
     if (!currentSong) return
     navigate(`/dashboard/song/${currentSong.id}`)
   }
+
+useEffect(() => {
+  // we use this condtion to check if the currentSong has a url and if the audioRef is available and prevent any errors from trying to play a song when there is no song selected or the audio element is not available
+  if (!currentSong?.url || !audioRef.current) return  // If there's no current song or the audio element is not available, exit early
+
+  audioRef.current.src = currentSong.url
+  audioRef.current.play()
+}, [currentSong])
+
+useEffect(() => {
+  if (!audioRef.current) return  // If the audio element is not available, exit early
+
+  if (isPlaying) {
+    audioRef.current.play()  // Play the audio if isPlaying is true
+  } else {
+    audioRef.current.pause() // Pause the audio if isPlaying is false
+  }
+}, [isPlaying])  // This effect runs whenever the isPlaying state changes, controlling the playback of the audio element based on the current state
 
 
   return (
@@ -104,7 +125,7 @@ const Player = () => {
           */}
           <button
             type="button"
-            aria-label={isPlaying ? 'Pause' : 'Play'}
+            aria-label={togglePlayAndPause ? 'Pause' : 'Play'}
             className="grid h-9 w-9 place-items-center rounded-full bg-[#b3b3b3] text-black transition hover:scale-105 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white"
           >
             {isPlaying ? (
