@@ -5,6 +5,7 @@ import LoginPage from '../../features/auth/ui/pages/LoginPage';
 import RegisterPage from '../../features/auth/ui/pages/RegisterPage';
 import DashboardLayout from '../layouts/DashboardLayout';
 import HomePage from '../../features/dashboard/ui/pages/HomePage';
+import SongDetailPage from '../../features/dashboard/ui/pages/SongDetailPage';
 
 const AppRoutes = () => {
     const router = createBrowserRouter([
@@ -29,6 +30,10 @@ const AppRoutes = () => {
                 {
                     path: "",
                     element: <HomePage />
+                },
+                {
+                    path: "song/:songId",
+                    element: <SongDetailPage />
                 }
             ]
         }
