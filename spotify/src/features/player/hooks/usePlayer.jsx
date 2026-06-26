@@ -1,41 +1,74 @@
-import {useEffect, useRef} from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { play, pause } from '../store/playerSlice'
+import {useEffect, useRef, useState} from 'react'
+import { useSelector } from 'react-redux'
 
 export const usePlayer = () => {
 
-    let dispatch = useDispatch() // Get the dispatch function from Redux
+
     let audioRef = useRef(new Audio()) // Create a ref for the audio element
 
-    let { currentSong, isPlaying } = useSelector((state) => state.player) // Get the current song and playing state from the Redux store
+    const [currentTime, setCurrentTime] = useState(0)
+    const [duration, setDuration] = useState(0)
 
+    const progress = duration ? (currentTime / duration) * 100 : 0
+
+    let { currentSong, isPlaying, shuffle } = useSelector((state) => state.player) // Get the current song and playing state from the Redux store
+    
+
+    // useeffect to handle progress bar and duration of the audio element
     useEffect(() => {
-        if (!currentSong?.url || !audioRef.current) return // If there's no current song or the audio element is not available, exit early
+        const audio = audioRef.current // Get the audio element from the ref
 
-        audioRef.current.src = currentSong.url // Set the source of the audio element to the current song's URL
-        audioRef.current.play() // Play the audio
+        const handleTimeUpdate = () => {
+            setCurrentTime(audio.currentTime) // Update the current time state with the audio's current time
+        }
+
+        const handleLoadedMetadata = () => {
+            setDuration(audio.duration) // Update the duration state with the audio's duration
+        }
+
+        audio.addEventListener('timeupdate', handleTimeUpdate)  // Add an event listener to update the current time as the audio plays
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata) // Add an event listener to set the duration when the audio metadata is loaded
+
+        return () => {
+            audio.removeEventListener('timeupdate', handleTimeUpdate) // Clean up the event listener when the component unmounts
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata) // Clean up the event listener when the component unmounts
+        }
+    }, [])
+
+
+    // useEffect to handle the current song and play/pause state
+    useEffect(() => {
+        if (!currentSong?.url) return // If there's no current song or the audio element is not available, exit early
+
+        const audio = audioRef.current // Get the audio element from the ref
+        audio.src = currentSong.url // Set the audio source to the current song's URL
+        audio.play().catch((error) => {
+            console.error("Error playing audio:", error) // Log any errors that occur while trying to play the audio
+        })
     }, [currentSong])
 
+
+    // useEffect to handle the play/pause state of the audio element
     useEffect(() => {
         if (!audioRef.current) return // If the audio element is not available, exit early
+        const audio = audioRef.current // Get the audio element from the ref
 
-        if (isPlaying) {
-            audioRef.current.play() // Play the audio if isPlaying is true
+        if (isPlaying){
+            audio.play().catch((error) => {
+                console.error("Error playing audio:", error) // Log any errors that occur while trying to play the audio
+            })
         } else {
-            audioRef.current.pause() // Pause the audio if isPlaying is false
+            audio.pause() // Pause the audio if isPlaying is false
         }
     }, [isPlaying])
 
 
-let togglePlayAndPause = () => {
-    if (isPlaying) {
-        dispatch(pause()); // Pause the audio if isPlaying is true
-    } else {
-        dispatch(play()); // Play the audio if isPlaying is false
-    }
-};
-
-return {
-    togglePlayAndPause,
-    }
-};
+    return {
+        currentSong,
+        isPlaying,
+        shuffle,
+        currentTime,
+        duration,
+        progress,
+  }
+}

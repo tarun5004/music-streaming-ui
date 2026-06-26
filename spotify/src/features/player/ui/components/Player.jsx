@@ -10,21 +10,20 @@ import {
   SkipForward,
   Volume2,
 } from 'lucide-react'
-import { useSelector } from 'react-redux'
-import {useRef, useState, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router'
 import { usePlayer } from '../../hooks/usePlayer'
+import { pause, play, playNext, playPrevious, toggleShuffle } from '../../store/playerSlice'
 
-
-// 
 const iconButtonClass =
   'grid h-8 w-8 place-items-center rounded-full text-[#b3b3b3] transition hover:text-white focus:outline-none focus:ring-2 focus:ring-white'
 
-const IconButton = ({ label, children, className = '' }) => {
+const IconButton = ({ label, children, className = '', onClick }) => {
   return (
     <button
       type="button"
       aria-label={label}
+      onClick={onClick}
       className={`${iconButtonClass} ${className}`}
     >
       {children}
@@ -44,41 +43,22 @@ const ProgressBar = ({ value = 0, className = '' }) => {
 }
 
 const Player = () => {
-  let { togglePlayAndPause } = usePlayer() // Get the togglePlayAndPause function from the usePlayer hook
-
-  const currentSong = useSelector((state)=> state.player.currentSong)
-  const isPlaying = useSelector((state) => state.player.isPlaying)
+  const { currentSong, isPlaying, progress, shuffle } = usePlayer()
+  const dispatch = useDispatch()
   const navigate = useNavigate()
-
-  const audioRef = useRef(null) // Create a ref for the audio element
-  const [currentTime, setCurrentTime] = useState(0)  // State to track the current time of the audio
-  const [duration, setDuration] = useState(0)       // State to track the duration of the audio
-
-  const progress = duration ? (currentTime / duration) * 100 : 0 // Calculate the progress percentage
 
   const handleOpenSongPage = () => {
     if (!currentSong) return
     navigate(`/dashboard/song/${currentSong.id}`)
   }
 
-useEffect(() => {
-  // we use this condtion to check if the currentSong has a url and if the audioRef is available and prevent any errors from trying to play a song when there is no song selected or the audio element is not available
-  if (!currentSong?.url || !audioRef.current) return  // If there's no current song or the audio element is not available, exit early
-
-  audioRef.current.src = currentSong.url
-  audioRef.current.play()
-}, [currentSong])
-
-useEffect(() => {
-  if (!audioRef.current) return  // If the audio element is not available, exit early
-
-  if (isPlaying) {
-    audioRef.current.play()  // Play the audio if isPlaying is true
-  } else {
-    audioRef.current.pause() // Pause the audio if isPlaying is false
+  const handleTogglePlay = () => {
+    if (isPlaying) {
+      dispatch(pause())
+    } else {
+      dispatch(play())
+    }
   }
-}, [isPlaying])  // This effect runs whenever the isPlaying state changes, controlling the playback of the audio element based on the current state
-
 
   return (
     <footer className="grid h-20 grid-cols-[1fr_auto_1fr] items-center border-t border-[#1f1f1f] bg-black px-4 text-white">
@@ -88,44 +68,44 @@ useEffect(() => {
         disabled={!currentSong}
         className="hidden min-w-0 items-center gap-3 text-left md:flex disabled:cursor-default"
       >
-  {currentSong ? (
-    <>
-      <img
-        src={currentSong.thumbnail}
-        alt={currentSong.title}
-        className="h-12 w-12 rounded object-cover"
-      />
+        {currentSong ? (
+          <>
+            <img
+              src={currentSong.thumbnail}
+              alt={currentSong.title}
+              className="h-12 w-12 rounded object-cover"
+            />
 
-      <div className="min-w-0">
-        <p className="truncate text-sm font-bold">
-          {currentSong.title}
-        </p>
-
-        <p className="truncate text-xs text-[#b3b3b3]">
-          {currentSong.artist}
-        </p>
-      </div>
-    </>
-  ) : (
-    <p className="text-sm text-[#b3b3b3]">No song selected</p>
-  )}
-</button>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold">{currentSong.title}</p>
+              <p className="truncate text-xs text-[#b3b3b3]">
+                {currentSong.artist}
+              </p>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-[#b3b3b3]">No song selected</p>
+        )}
+      </button>
 
       <div className="col-span-3 flex min-w-0 flex-col items-center gap-3 md:col-span-1">
         <div className="flex items-center gap-3 sm:gap-5">
-          <IconButton label="Shuffle">
+          <IconButton
+            label="Shuffle"
+            onClick={() => dispatch(toggleShuffle())}
+            className={shuffle ? 'text-[#1ed760]' : ''}
+          >
             <Shuffle size={17} />
           </IconButton>
 
-          <IconButton label="Previous">
+          <IconButton label="Previous" onClick={() => dispatch(playPrevious())}>
             <SkipBack size={20} fill="currentColor" />
           </IconButton>
-          {/* 
-          button pause and play 
-          */}
+
           <button
             type="button"
-            aria-label={togglePlayAndPause ? 'Pause' : 'Play'}
+            onClick={handleTogglePlay}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
             className="grid h-9 w-9 place-items-center rounded-full bg-[#b3b3b3] text-black transition hover:scale-105 hover:bg-white focus:outline-none focus:ring-2 focus:ring-white"
           >
             {isPlaying ? (
@@ -135,7 +115,7 @@ useEffect(() => {
             )}
           </button>
 
-          <IconButton label="Next">
+          <IconButton label="Next" onClick={() => dispatch(playNext())}>
             <SkipForward size={20} fill="currentColor" />
           </IconButton>
 
@@ -144,7 +124,10 @@ useEffect(() => {
           </IconButton>
         </div>
 
-        <ProgressBar value={progress} className="w-[min(50vw,620px)] min-w-[180px]" />
+        <ProgressBar
+          value={progress}
+          className="w-[min(50vw,620px)] min-w-[180px]"
+        />
       </div>
 
       <div className="hidden items-center justify-end gap-2 md:flex">
@@ -163,35 +146,8 @@ useEffect(() => {
           <Maximize size={18} />
         </IconButton>
       </div>
-      {/*
-      Audio element
-      Agar currentSong ke andar url hai
-      to audio element banao
-      aur us url ko autoPlay karo */}
-      {currentSong?.url && (  
-  <audio
-    ref={audioRef}
-    src={currentSong.url}    // Set the audio source to the current song's URL
-    autoPlay                  // Automatically play the audio when the source changes
-    onTimeUpdate={(event) => {    // Update the current time as the audio plays
-      setCurrentTime(event.currentTarget.currentTime) // Update the current time state and the currenttarget.currentTime means the current time of the audio element
-    }}
-    onLoadedMetadata={(event) => {   // When the audio metadata is loaded, set the duration and reset current time
-      setDuration(event.currentTarget.duration)
-      setCurrentTime(0)
-    }}
-  />
-)}
     </footer>
   )
 }
 
 export default Player
-
-// iTunes previewUrl
-//   -> songsApi me url
-//   -> HomePage song
-//   -> SongCard dispatch(song)
-//   -> Redux currentSong
-//   -> Player currentSong.url
-//   -> audio play

@@ -1,7 +1,14 @@
 import { Play } from 'lucide-react'
+import { useDispatch } from 'react-redux'
+import { setQueueAndPlay } from '../../../player/store/playerSlice'
 
 
-const SongCrad = ({ song }) => {
+const SongCrad = ({ song, songs, index }) => {
+  const dispatch = useDispatch()
+
+  const handlePlaySong = () => {
+    dispatch(setQueueAndPlay({ songs, index }))
+  }
   const { title, artist, album, thumbnail, year } = song
   const displayYear = year ? String(year).slice(0, 4) : 'Unknown year'
 
@@ -19,6 +26,7 @@ const SongCrad = ({ song }) => {
 
         <button
           type="button"
+          onClick={handlePlaySong}
           aria-label={`Play ${title}`}
           className="absolute bottom-3 right-3 grid h-11 w-11 translate-y-2 place-items-center rounded-full bg-[#1ed760] text-black opacity-0 shadow-lg transition group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white"
         >
